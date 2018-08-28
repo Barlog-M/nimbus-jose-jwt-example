@@ -1,0 +1,94 @@
+buildscript {
+    ext {
+        kotlinVer = '1.2.61'
+
+        nimbusJoseJwtVer = '6.0.1'
+
+        junitJupiterVer = '5.2.0'
+        jmhVer = '1.21'
+
+        versionPluginVer = '0.20.0'
+        shadowPluginVer = '2.0.4'
+    }
+
+    repositories {
+        jcenter()
+        maven { url 'https://plugins.gradle.org/m2/' }
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVer"
+        classpath "com.github.jengelman.gradle.plugins:shadow:$shadowPluginVer"
+        // gradle dependencyUpdates -Drevision=release
+        classpath "com.github.ben-manes:gradle-versions-plugin:$versionPluginVer"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'idea'
+apply plugin: 'kotlin'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.github.ben-manes.versions'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVer"
+    //compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVer"
+
+    compile "com.nimbusds:nimbus-jose-jwt:$nimbusJoseJwtVer"
+
+    compile "org.openjdk.jmh:jmh-core:$jmhVer"
+    kapt "org.openjdk.jmh:jmh-generator-annprocess:$jmhVer"
+
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVer"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterVer"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterVer"
+}
+
+group = 'app'
+version = '0.1-SNAPSHOT'
+
+mainClassName = 'app.AppKt'
+
+sourceCompatibility = JavaVersion.VERSION_1_10
+targetCompatibility = JavaVersion.VERSION_1_10
+
+tasks.withType(JavaCompile) {
+    options.fork = true
+    options.incremental = true
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        apiVersion = "1.2"
+        languageVersion = "1.2"
+        jvmTarget = "1.8"
+    }
+}
+
+tasks.withType(Test) {
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+shadowJar {
+    baseName = 'app'
+    classifier = null
+    version = null
+}
+
+wrapper {
+    gradleVersion = '4.9'
+    distributionType = Wrapper.DistributionType.ALL
+}

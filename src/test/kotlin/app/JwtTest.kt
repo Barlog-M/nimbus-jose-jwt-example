@@ -5,8 +5,8 @@ import com.nimbusds.jwt.SignedJWT
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
-import org.openjdk.jmh.annotations.Benchmark
 import java.util.Date
 
 class JwtTest {
@@ -60,7 +60,34 @@ class JwtTest {
     }
 
     @Test
-    fun `verify fail`() {
+    fun `verify fail on signature`() {
+        val userId = "e28dae05786454e083904b654614d59b"
+        val userName = "John Doe"
+        val roles = listOf("USER", "ADMIN")
+        val jti = "f93a9003f9c1d747e56d732fee1af006"
+        val ttl = 1
+
+        val jwt = jwtService.create(
+            userId = userId,
+            userName = userName,
+            roles = roles,
+            ttl = ttl,
+            jti = jti)
+
+        val jwtParts = jwt.split('.')
+        val signature = jwtParts[2]
+        val brokenSignature = (signature.first() + 1) +
+            signature.takeLast(signature.length - 1)
+        val brokenJwt = "${jwtParts[0]}.${jwtParts[1]}.$brokenSignature"
+
+        assertEquals(jwt.length, brokenJwt.length)
+        assertNotEquals(jwt, brokenJwt)
+
+        assertFalse(jwtService.verify(brokenJwt))
+    }
+
+    @Test
+    fun `verify fail on ttl`() {
         val userId = "e28dae05786454e083904b654614d59b"
         val userName = "John Doe"
         val roles = listOf("USER", "ADMIN")
